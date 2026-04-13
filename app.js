@@ -1,17 +1,19 @@
 const DAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
 const SHIFTS = {
-  '': 'Sin asignar',
-  'M': 'Mañana',
-  'T': 'Tarde',
-  'L': 'Libre'
+  '':   'Sin asignar',
+  'M':  'Mañana',
+  'T':  'Tarde',
+  'MT': 'Mañana y tarde',
+  'L':  'Libre'
 };
 
 const DEFAULT_TIMES = {
-  'M': ['06:30', '13:00'],
-  'T': ['13:00', '21:00'],
-  'L': ['', ''],
-  '':  ['', '']
+  'M':  ['06:30', '13:00', '', ''],
+  'T':  ['13:00', '21:00', '', ''],
+  'MT': ['06:30', '13:00', '13:00', '21:00'],
+  'L':  ['', '', '', ''],
+  '':   ['', '', '', '']
 };
 
 const COLORS = [
@@ -83,13 +85,13 @@ function removeEmployee(id) {
 
 function getEntry(empId, dayIdx) {
   const wk = weekKey(weekOffset);
-  return (schedule[empId][wk] || {})[dayIdx] || { shift: '', start: '', end: '' };
+  return (schedule[empId][wk] || {})[dayIdx] || { shift: '', start: '', end: '', start2: '', end2: '' };
 }
 
 function setEntry(empId, dayIdx, field, val) {
   const wk = weekKey(weekOffset);
   if (!schedule[empId][wk]) schedule[empId][wk] = {};
-  if (!schedule[empId][wk][dayIdx]) schedule[empId][wk][dayIdx] = { shift: '', start: '', end: '' };
+  if (!schedule[empId][wk][dayIdx]) schedule[empId][wk][dayIdx] = { shift: '', start: '', end: '', start2: '', end2: '' };
   schedule[empId][wk][dayIdx][field] = val;
 }
 
@@ -100,9 +102,10 @@ function initials(name) {
 }
 
 function bgClass(v) {
-  if (v === 'M') return 'ci-m';
-  if (v === 'T') return 'ci-t';
-  if (v === 'L') return 'ci-l';
+  if (v === 'M')  return 'ci-m';
+  if (v === 'T')  return 'ci-t';
+  if (v === 'MT') return 'ci-mt';
+  if (v === 'L')  return 'ci-l';
   return 'ci-x';
 }
 
@@ -110,23 +113,38 @@ function bgClass(v) {
 
 function onShiftChange(empId, dayIdx, selectEl) {
   const val      = selectEl.value;
-  const defaults = DEFAULT_TIMES[val] || ['', ''];
+  const defaults = DEFAULT_TIMES[val] || ['', '', '', ''];
   const cur      = getEntry(empId, dayIdx);
 
   setEntry(empId, dayIdx, 'shift', val);
-  if (!cur.start) setEntry(empId, dayIdx, 'start', defaults[0]);
-  if (!cur.end)   setEntry(empId, dayIdx, 'end',   defaults[1]);
+  if (!cur.start)  setEntry(empId, dayIdx, 'start',  defaults[0]);
+  if (!cur.end)    setEntry(empId, dayIdx, 'end',    defaults[1]);
+  if (!cur.start2) setEntry(empId, dayIdx, 'start2', defaults[2]);
+  if (!cur.end2)   setEntry(empId, dayIdx, 'end2',   defaults[3]);
 
-  const cellInner = selectEl.closest('.cell-inner');
+  const cellInner  = selectEl.closest('.cell-inner');
   cellInner.className = 'cell-inner ' + bgClass(val);
 
-  const timeRow = cellInner.querySelector('.time-row');
+  const entry    = getEntry(empId, dayIdx);
+  const timeRow  = cellInner.querySelector('.time-row');
+  const timeRow2 = cellInner.querySelector('.time-row2');
+
   if (val === '' || val === 'L') {
     timeRow.classList.add('hidden');
+    timeRow2.classList.add('hidden');
+  } else if (val === 'MT') {
+    timeRow.classList.remove('hidden');
+    timeRow2.classList.remove('hidden');
+    const [sEl, eEl] = timeRow.querySelectorAll('input[type=time]');
+    sEl.value = entry.start  || defaults[0];
+    eEl.value = entry.end    || defaults[1];
+    const [sEl2, eEl2] = timeRow2.querySelectorAll('input[type=time]');
+    sEl2.value = entry.start2 || defaults[2];
+    eEl2.value = entry.end2   || defaults[3];
   } else {
     timeRow.classList.remove('hidden');
+    timeRow2.classList.add('hidden');
     const [sEl, eEl] = timeRow.querySelectorAll('input[type=time]');
-    const entry = getEntry(empId, dayIdx);
     sEl.value = entry.start || defaults[0];
     eEl.value = entry.end   || defaults[1];
   }
@@ -179,13 +197,17 @@ function render() {
       </div></td>`;
 
     DAYS.forEach((_, di) => {
-      const entry    = getEntry(emp.id, di);
-      const s        = entry.shift || '';
-      const bg       = bgClass(s);
-      const showTime = s === 'M' || s === 'T';
-      const startVal = entry.start || DEFAULT_TIMES[s]?.[0] || '';
-      const endVal   = entry.end   || DEFAULT_TIMES[s]?.[1] || '';
-      const weekend  = di >= 5 ? ' is-weekend' : '';
+      const entry     = getEntry(emp.id, di);
+      const s         = entry.shift || '';
+      const bg        = bgClass(s);
+      const showTime  = s === 'M' || s === 'T' || s === 'MT';
+      const showTime2 = s === 'MT';
+      const d         = DEFAULT_TIMES[s] || ['','','',''];
+      const startVal  = entry.start  || d[0];
+      const endVal    = entry.end    || d[1];
+      const start2Val = entry.start2 || d[2];
+      const end2Val   = entry.end2   || d[3];
+      const weekend   = di >= 5 ? ' is-weekend' : '';
 
       html += `<td class="day-cell${weekend}">
         <div class="cell-inner ${bg}">
@@ -200,6 +222,13 @@ function render() {
             <span class="time-sep">–</span>
             <input type="time" value="${endVal}"
                    onchange="onTimeChange('${emp.id}',${di},'end',this.value)" />
+          </div>
+          <div class="time-row time-row2 ${showTime2 ? '' : 'hidden'}">
+            <input type="time" value="${start2Val}"
+                   onchange="onTimeChange('${emp.id}',${di},'start2',this.value)" />
+            <span class="time-sep">–</span>
+            <input type="time" value="${end2Val}"
+                   onchange="onTimeChange('${emp.id}',${di},'end2',this.value)" />
           </div>
         </div>
       </td>`;
@@ -250,7 +279,7 @@ function saveImage() {
   // Replace selects with static divs
   const realSelects  = source.querySelectorAll('select.shift-sel');
   const cloneSelects = clone.querySelectorAll('select.shift-sel');
-  const colorMap     = { M: '#0c3d6e', T: '#6b4500', L: '#0e4d28', '': '#3a3958' };
+  const colorMap     = { M: '#0c3d6e', T: '#6b4500', MT: '#4a2070', L: '#0e4d28', '': '#3a3958' };
   cloneSelects.forEach((sel, i) => {
     const val   = realSelects[i] ? realSelects[i].value : sel.value;
     const label = SHIFTS[val] || 'Sin asignar';
@@ -260,19 +289,29 @@ function saveImage() {
     sel.replaceWith(div);
   });
 
-  // Replace time inputs with static spans
-  const realTimeRows  = source.querySelectorAll('.time-row:not(.hidden)');
-  const cloneTimeRows = clone.querySelectorAll('.time-row');
+  // Replace time rows with static spans
   const timeStyle = 'background:rgba(255,255,255,0.85);border:1px solid rgba(0,0,0,0.12);border-radius:4px;padding:4px 8px;font-family:DM Sans,sans-serif;font-size:12px;font-weight:600;color:#1a1840;min-width:58px;text-align:center;display:inline-block';
-  cloneTimeRows.forEach((row, i) => {
-    const realRow = realTimeRows[i];
-    if (!realRow || row.classList.contains('hidden')) { row.style.display = 'none'; return; }
-    const [sEl, eEl] = realRow.querySelectorAll('input[type=time]');
+  const sepStyle  = 'font-size:11px;color:#6e6c8a;font-weight:500';
+  const rowStyle  = 'display:flex;align-items:center;justify-content:center;gap:6px;padding:2px 0';
+
+  // All time inputs in source (visible ones only, matched by index to clone)
+  const realInputPairs  = [...source.querySelectorAll('.time-row:not(.hidden), .time-row2:not(.hidden)')];
+  const cloneAllRows    = [...clone.querySelectorAll('.time-row, .time-row2')];
+
+  // Build a map: for each real visible row, get its input values
+  let realIdx = 0;
+  cloneAllRows.forEach(row => {
+    const isHidden = row.classList.contains('hidden');
+    if (isHidden) { row.style.display = 'none'; return; }
+
+    const realRow = realInputPairs[realIdx++];
+    const [sEl, eEl] = realRow ? realRow.querySelectorAll('input[type=time]') : [];
     const sVal = sEl ? sEl.value : '';
     const eVal = eEl ? eEl.value : '';
-    const div  = document.createElement('div');
-    div.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:6px;padding:2px 0';
-    div.innerHTML = `<span style="${timeStyle}">${sVal}</span><span style="font-size:11px;color:#6e6c8a;font-weight:500">–</span><span style="${timeStyle}">${eVal}</span>`;
+
+    const div = document.createElement('div');
+    div.style.cssText = rowStyle;
+    div.innerHTML = `<span style="${timeStyle}">${sVal}</span><span style="${sepStyle}">–</span><span style="${timeStyle}">${eVal}</span>`;
     row.replaceWith(div);
   });
 

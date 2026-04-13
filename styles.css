@@ -16,6 +16,9 @@
   --gray-soft:   #f0eff6;
   --gray-mid:    #8b8aac;
   --gray-dark:   #3a3958;
+  --purple-soft: #ede8ff;
+  --purple-mid:  #7c4dcc;
+  --purple-dark: #3b1a8f;
   --surface:     #f7f6fb;
   --card:        #ffffff;
   --border:      #e2e0ef;
@@ -120,6 +123,7 @@ main {
 }
 
 #app {
+  max-width: 1140px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -199,10 +203,11 @@ main {
   flex-shrink: 0;
 }
 
-.dot-m { background: var(--blue-mid); }
-.dot-t { background: var(--amber-mid); }
-.dot-l { background: var(--green-mid); }
-.dot-x { background: var(--gray-mid); }
+.dot-m  { background: var(--blue-mid); }
+.dot-t  { background: var(--amber-mid); }
+.dot-mt { background: var(--purple-mid); }
+.dot-l  { background: var(--green-mid); }
+.dot-x  { background: var(--gray-mid); }
 
 /* ── Add employee ── */
 .add-row {
@@ -400,10 +405,11 @@ td.day-cell:last-child { border-right: none; }
   justify-content: center;
 }
 
-.ci-m { background: var(--blue-soft); }
-.ci-t { background: var(--amber-soft); }
-.ci-l { background: var(--green-soft); justify-content: center; align-items: center; }
-.ci-x { background: var(--gray-soft); }
+.ci-m  { background: var(--blue-soft); }
+.ci-t  { background: var(--amber-soft); }
+.ci-mt { background: var(--purple-soft); }
+.ci-l  { background: var(--green-soft); justify-content: center; align-items: center; }
+.ci-x  { background: var(--gray-soft); }
 
 /* ── Shift selector ── */
 select.shift-sel {
@@ -421,10 +427,11 @@ select.shift-sel {
   -webkit-appearance: none;
 }
 
-.ci-m select.shift-sel { color: var(--blue-dark); }
-.ci-t select.shift-sel { color: var(--amber-dark); }
-.ci-l select.shift-sel { color: var(--green-dark); }
-.ci-x select.shift-sel { color: var(--gray-dark); }
+.ci-m  select.shift-sel { color: var(--blue-dark); }
+.ci-t  select.shift-sel { color: var(--amber-dark); }
+.ci-mt select.shift-sel { color: var(--purple-dark); }
+.ci-l  select.shift-sel { color: var(--green-dark); }
+.ci-x  select.shift-sel { color: var(--gray-dark); }
 
 /* ── Time inputs ── */
 .time-row {
@@ -449,7 +456,13 @@ select.shift-sel {
 }
 
 .time-sep { font-size: 11px; color: var(--text-muted); font-weight: 500; }
-.time-row.hidden { display: none; }
+.time-row.hidden  { display: none; }
+.time-row2.hidden { display: none; }
+.time-row2 {
+  border-top: 1px dashed rgba(0,0,0,0.12);
+  padding-top: 4px;
+  margin-top: 2px;
+}
 
 /* ── Weekend highlight ── */
 .is-weekend { background: rgba(108,99,255,0.03); }
